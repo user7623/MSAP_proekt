@@ -15,55 +15,18 @@ public class MyBroadcastReceiver extends BroadcastReceiver {
     private static final String TAG = "MyBroadcastReceiver";
     @Override
     public void onReceive(Context context, Intent intent) {
-
-        String broadcast = "";
-        try {
-            broadcast = intent.getAction().toString();
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+            Log.d(TAG,"it worked!");
+            Intent i = new Intent(context, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(i);
         }
-
-        switch (broadcast){
-            case "ACTION_BOOT_COMPLETED" :
-                Log.d(TAG, "Service restarted after successful boot");
-                Toast.makeText(context, "Service restarted after successful boot", Toast.LENGTH_LONG).show();
-                startServiceFromReceiver(context);
-                break;
-            case "SCREEN_ON" :
-                Log.d(TAG, "Service restarted");
-                Toast.makeText(context, "Service restarted", Toast.LENGTH_LONG).show();
-                startServiceFromReceiver(context);
-                break;
-            case "ACTION_POWER_CONNECTED" :
-                Log.d(TAG, "ACTION_POWER_CONNECTED ");
-                Toast.makeText(context, "ACTION_POWER_CONNECTED ", Toast.LENGTH_LONG).show();
-                startServiceFromReceiver(context);
-                break;
-
-                default:
-                    startServiceFromReceiver(context);
-
+        if (Intent.ACTION_SCREEN_ON.equals(intent.getAction())) {
+            Log.d(TAG,"it worked!");
+            Intent i = new Intent(context, MainActivity.class);
+            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(i);
         }
-        /*
-        Log.d(TAG, "Service restarted after successful boot");
-        Toast.makeText(context, "Service restarted after successful boot", Toast.LENGTH_LONG).show();
-
-        Intent i = new Intent(context, MainActivity.class);
-        context.startService(i);
-        */
-
-        /*
-        Intent secondServiceIntent = new Intent(context, ExampleService.class);
-        ContextCompat.startForegroundService(context, secondServiceIntent);
-        */
     }
 
-    private void startServiceFromReceiver(Context context) {
-        Log.d(TAG, "Service restarted after successful boot");
-        Toast.makeText(context, "Service restarted after successful boot", Toast.LENGTH_LONG).show();
-
-        Intent i = new Intent(context, MainActivity.class);
-        context.startService(i);
-
-    }
 }

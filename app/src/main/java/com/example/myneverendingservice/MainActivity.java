@@ -29,7 +29,6 @@ public class MainActivity extends Activity {
                 Intent serviceIntent = new Intent(this, ExampleService.class);
                 ContextCompat.startForegroundService(this, serviceIntent);
                 //serviceRunning = true;
-
         }
 
         public void stopService() {
