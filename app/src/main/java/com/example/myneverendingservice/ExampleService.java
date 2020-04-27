@@ -5,6 +5,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -45,9 +47,44 @@ public class ExampleService extends Service {
                 .build();
         Log.i(TAG, "starting foreground");
         startForeground(1, notification);
-        startTimer();
+        //TODO: comment timer and make new funcs.!
+        //startTimer();
 
+            if (checkNetwork()) {
+                Log.i(TAG, "network is available");
+                checkPing();
+            }
+        Log.i(TAG, "no network is available, will check again in 10 minutes");
         return START_NOT_STICKY;
+    }
+
+    private void checkPing() {
+        Log.i(TAG, "checking your ping");
+        String pingReturnMsg = "nothing";
+
+        //TODO: tuka prati poraka PING
+
+        Log.i(TAG, "your ping returned" + pingReturnMsg);
+    }
+
+    private boolean checkNetwork() {
+        boolean connected = false;
+            try {
+                ConnectivityManager connectivityManager
+                        = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+                if(activeNetworkInfo != null && activeNetworkInfo.isConnected())
+                {
+                    connected = true;
+                }
+            }
+            catch(Exception e){
+                e.printStackTrace();
+                return false;
+            }
+
+        return connected;
+
     }
 
     @Override
