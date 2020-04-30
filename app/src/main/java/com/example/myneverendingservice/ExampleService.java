@@ -13,7 +13,11 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -24,6 +28,11 @@ public class ExampleService extends Service {
 
     private int counter = 0;
     Context ct;
+    Boolean isConnected = false,
+            isWiFi = false,
+            isMobile = false;
+    //TODO: VNESI ADRESA ZA host !!!
+    String host = "google.com";
 
     @Override
     public void onCreate() {
@@ -47,45 +56,20 @@ public class ExampleService extends Service {
                 .build();
         Log.i(TAG, "starting foreground");
         startForeground(1, notification);
-        //TODO: comment timer and make new funcs.!
-        //startTimer();
+        startTimer();
+        //startPingService();
 
-            if (checkNetwork()) {
-                Log.i(TAG, "network is available");
-                checkPing();
-            }
-        Log.i(TAG, "no network is available, will check again in 10 minutes");
         return START_NOT_STICKY;
     }
 
-    private void checkPing() {
-        Log.i(TAG, "checking your ping");
-        String pingReturnMsg = "nothing";
-
-        //TODO: tuka prati poraka PING
-
-        Log.i(TAG, "your ping returned" + pingReturnMsg);
+    private void startPingService() {
+        //Intent serviceI = new Intent(this, ping.class);
+        //ContextCompat.startForegroundService(this, serviceIntent);
+        //startService(serviceI);
+        Intent serviceI = new Intent(this, ping.class);
+        startService(serviceI);
     }
 
-    private boolean checkNetwork() {
-        boolean connected = false;
-            try {
-                ConnectivityManager connectivityManager
-                        = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-                if(activeNetworkInfo != null && activeNetworkInfo.isConnected())
-                {
-                    connected = true;
-                }
-            }
-            catch(Exception e){
-                e.printStackTrace();
-                return false;
-            }
-
-        return connected;
-
-    }
 
     @Override
     public void onDestroy() {
@@ -124,6 +108,11 @@ public class ExampleService extends Service {
         timerTask = new TimerTask() {
             public void run() {
                 Log.i("in timer", "in timer ++++  " + (counter++));
+                //ako pominale x sekundi povikaj ping
+                if(counter % 10 == 0)
+                {
+                    startPingService();
+                }
             }
         };
     }
