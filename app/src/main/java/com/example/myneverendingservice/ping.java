@@ -40,7 +40,6 @@ public class ping extends Service {
         makePing();
 
     }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
@@ -108,7 +107,7 @@ public class ping extends Service {
     public boolean isConnectedToThisServer(String host) {
         Runtime runtime = Runtime.getRuntime();
         try {
-            Process ipProcess = runtime.exec("/system/bin/ping -c 1 " + host);
+            Process ipProcess = runtime.exec("/system/bin/ping -s " + packetSize +" -c "+count + " "+ host);
             int exitValue = ipProcess.waitFor();
 
             BufferedReader in = new BufferedReader( new InputStreamReader(ipProcess.getInputStream()));
@@ -144,11 +143,8 @@ public class ping extends Service {
     public void initializeTimerTask() {
         timerTask = new TimerTask() {
             public void run() {
-                Log.i("in timer", "in timer ++++  " + (counter++));
-                //ako pominale x sekundi povikaj ping
-                if((counter % 10 == 0) && (count > 2)) //prvpat pravi ping bez da dekrementira zatoa 2
+                if(counter % (jobPeriod * 1000) == 0)
                 {
-                    count --;
                     makePing();
                 }
             }
