@@ -16,27 +16,90 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity {
-    Boolean isConnected = false,
-            isWiFi = false,
-            isMobile = false;
-    boolean flag = false;
-    String host = "10.0.2.2";
+    private String date;
+    private String host;
+    private int count;
+    private int packetSize;
+    private int jobPeriod;
+    private String jobType;
     private boolean serviceRunning = false;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             //setContentView(R.layout.activity_main);
-            startService();
-            //makePing();
+
+            Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl("http://10.0.2.2:5000/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            jobInterface jobinterface = retrofit.create(jobInterface.class);
+
+            Call<List<Job>> call = jobinterface.getJobs();
+
+            call.enqueue(new Callback<List<Job>>() {
+                @Override
+                public void onResponse(Call<List<Job>> call, Response<List<Job>> response) {
+                    //ako e zgresena adresata ili e ne e ulkucen backend
+                    if(!response.isSuccessful())
+                    {
+                        String errorString = "Error" + response.code();
+                        Log.d(TAG, errorString);
+                    }
+
+                    List<Job> jobs = response.body();
+
+                    for(Job job : jobs)
+                    {
+                        date = job.getDate();
+                        host = job.getHost();
+                        count = job.getCount();
+                        packetSize = job.getPacketSize();
+                        jobPeriod = job.getJobPeriod();
+                        jobType = job.getJobType();
+                        //proveri go imeto na job-ot i povikaj soodvetna funk
+                        if( jobType.equals("PING"))
+                        {
+                            callPing();
+                        }
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<List<Job>> call, Throwable t) {
+                    Log.d(TAG, t.getMessage());
+                }
+            });
+
+            //startService();
 
             finish();
         }
 
+        public void callPing()
+        {
+            Intent serviceI = new Intent(this, ping.class);
+
+            serviceI.putExtra("date", date);
+            serviceI.putExtra("host", host);
+            serviceI.putExtra("count", count);
+            serviceI.putExtra("packetSize", packetSize);
+            serviceI.putExtra("jobPeriod", jobPeriod);
+
+            startService(serviceI);
+        }
         public void startService() {
                 Log.d(TAG, "ProcessMainClass: start service go!!!!");
                 Intent serviceIntent = new Intent(this, ExampleService.class);

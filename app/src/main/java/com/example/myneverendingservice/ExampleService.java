@@ -28,11 +28,6 @@ public class ExampleService extends Service {
 
     private int counter = 0;
     Context ct;
-    Boolean isConnected = false,
-            isWiFi = false,
-            isMobile = false;
-    //TODO: VNESI ADRESA ZA host !!!
-    String host = "google.com";
 
     @Override
     public void onCreate() {

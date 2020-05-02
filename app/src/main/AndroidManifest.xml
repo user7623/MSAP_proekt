@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.RECEIVE_ACTION_POWER_CONNECTED" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:name=".App"
@@ -16,9 +16,13 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoDisplay">
         <service
-            android:name=".ping"
+            android:name=".getJob"
             android:enabled="true"
             android:exported="true"></service>
+        <service
+            android:name=".ping"
+            android:enabled="true"
+            android:exported="true" />
 
         <activity android:name=".MainActivity">
             <intent-filter>

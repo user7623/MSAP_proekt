@@ -9,8 +9,12 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static android.content.ContentValues.TAG;
 
@@ -18,31 +22,46 @@ public class ping extends Service {
     Boolean isConnected = false,
             isWiFi = false,
             isMobile = false;
-    String host = "10.0.2.2";
+    private String date;
+    private String host;
+    private String realHost = "http://10.0.2.2:5000/getJobs";
+    private int count;
+    private int packetSize;
+    private int jobPeriod;
+    private int counter = 0;
     public ping() {
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        throw new UnsupportedOperationException("Not yet implemented");
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.i(TAG, "starting ping check!");
+        startTimer();
         makePing();
+
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+
+        Intent orderIntent = intent;
+
+        date = orderIntent.getStringExtra("date");
+        host = orderIntent.getStringExtra("host");
+        count = orderIntent.getIntExtra("count" , 1);
+        packetSize = orderIntent.getIntExtra("packetSize" , 1);
+        jobPeriod = orderIntent.getIntExtra("jobPeriod" , 1);
+
+        //proverka dali se ok preneseni
+        Log.d(TAG, "date:" + date);
+        Log.d(TAG, "host:" + host);
+        Log.d(TAG, "packet size:" + packetSize);
+
         onCreate();
         return START_NOT_STICKY;
     }
 
     private void makePing() {
-        // https://developer.android.com/training/monitoring-device-state/connectivity-monitoring
         ConnectivityManager cm =
                 (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -62,14 +81,10 @@ public class ping extends Service {
 
         if (isConnected) {
             if (isWiFi) {
-                //Toast.makeText(this, "Yes, WiF", Toast.LENGTH_SHORT).show();
                 Log.i(TAG, "connection via wifi");
-                // ping google server for testing purpose
                 if (isConnectedToThisServer(host)) {
-                    //Toast.makeText(this, "Yes, Connected to Google", Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "Connected to host");
                 } else {
-                    //Toast.makeText(this, "No Google Connection", Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "unable to connect to host");
                 }
             }
@@ -77,13 +92,10 @@ public class ping extends Service {
 
             if (isMobile) {
 
-                //Toast.makeText(this, "Yes, Mobile", Toast.LENGTH_SHORT).show();
                 Log.i(TAG, "connection via mobile data");
                 if (isConnectedToThisServer(host)) {
-                    //Toast.makeText(this, "Yes, Connected to Google", Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "Connected to host");
                 } else {
-                    //Toast.makeText(this, "No Google Connection", Toast.LENGTH_SHORT).show();
                     Log.i(TAG, "unable to connect to host");
                 }
             }
@@ -91,28 +103,9 @@ public class ping extends Service {
             Toast.makeText(this, "No Network", Toast.LENGTH_SHORT).show();
         }
 
-       /* try{
-            reaktivator();
-        }catch (Exception e){
-            //Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            Log.i(TAG, e.getMessage());
-        }*/
     }
 
-    private void reaktivator() {
-        try{
-            Thread.sleep(10000);
-            makePing();
-        }catch (Exception e){
-            //Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            Log.i(TAG, e.getMessage());
-        }
-    }
-
-
-    // Function that uses ping, takes server name or ip as argument.
     public boolean isConnectedToThisServer(String host) {
-        // https://stackoverflow.com/questions/3905358/how-to-ping-external-ip-from-java-android
         Runtime runtime = Runtime.getRuntime();
         try {
             Process ipProcess = runtime.exec("/system/bin/ping -c 1 " + host);
@@ -122,21 +115,50 @@ public class ping extends Service {
             String inputLine;
 
             while((inputLine = in.readLine())!= null){
-                //Toast.makeText(this, inputLine, Toast.LENGTH_SHORT).show();
                 Log.i(TAG, inputLine);
             }
 
             return (exitValue == 0);
         }catch (Exception e) {
-            //Toast.makeText(this, "Error: "+e.getMessage().toString(), Toast.LENGTH_SHORT).show();
             Log.i(TAG, e.getMessage());
         }
-        /*catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
         return false;
     }
 
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+    private static Timer timer;
+    private static TimerTask timerTask;
+    long oldTime = 0;
+
+    public void startTimer() {
+        stoptimertask();
+        timer = new Timer();
+        initializeTimerTask();
+        timer.schedule(timerTask, 1000, 1000); //
+    }
+
+    public void initializeTimerTask() {
+        timerTask = new TimerTask() {
+            public void run() {
+                Log.i("in timer", "in timer ++++  " + (counter++));
+                //ako pominale x sekundi povikaj ping
+                if((counter % 10 == 0) && (count > 2)) //prvpat pravi ping bez da dekrementira zatoa 2
+                {
+                    count --;
+                    makePing();
+                }
+            }
+        };
+    }
+
+    public void stoptimertask() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+    }
 }
