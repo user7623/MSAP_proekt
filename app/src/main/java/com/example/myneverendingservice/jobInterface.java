@@ -6,8 +6,8 @@ import retrofit2.Call;
 import retrofit2.http.GET;
 
 public interface jobInterface {
-
-    @GET("getJobs")
+//starata verzija za backend_1 ->   @GET("getJobs")
+    @GET("getJobs/emulator")
     Call<List<Job>> getJobs();
 
 }

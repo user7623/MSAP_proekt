@@ -55,7 +55,7 @@ public class ping extends Service {
         Log.d(TAG, "date:" + date);
         Log.d(TAG, "host:" + host);
         Log.d(TAG, "packet size:" + packetSize);
-
+        Log.d(TAG, "job period: " + jobPeriod);
         onCreate();
         return START_NOT_STICKY;
     }
@@ -107,7 +107,7 @@ public class ping extends Service {
     public boolean isConnectedToThisServer(String host) {
         Runtime runtime = Runtime.getRuntime();
         try {
-            Process ipProcess = runtime.exec("/system/bin/ping -s " + packetSize +" -c "+count + " "+ host);
+            Process ipProcess = runtime.exec("/system/bin/ping -s " + packetSize + " -c " + count + " " + host);
             int exitValue = ipProcess.waitFor();
 
             BufferedReader in = new BufferedReader( new InputStreamReader(ipProcess.getInputStream()));
@@ -137,18 +137,25 @@ public class ping extends Service {
         stoptimertask();
         timer = new Timer();
         initializeTimerTask();
+
         timer.schedule(timerTask, 1000, 1000); //
     }
 
     public void initializeTimerTask() {
         timerTask = new TimerTask() {
             public void run() {
-                if(counter % (jobPeriod * 1000) == 0)
+                try {
+                    Thread.sleep(jobPeriod * 100);
+                        if(jobPeriod > 0)
+                        {
+                            makePing();
+                        }
+                }catch (Exception e)
                 {
-                    makePing();
+                    Log.d(TAG, e.getMessage());
                 }
             }
-        };
+       };
     }
 
     public void stoptimertask() {
