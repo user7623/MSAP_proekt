@@ -24,11 +24,10 @@ public class ping extends Service {
             isMobile = false;
     private String date;
     private String host;
-    private String realHost = "http://10.0.2.2:5000/getJobs";
     private int count;
     private int packetSize;
     private int jobPeriod;
-    private int counter = 0;
+    private String report = "result: ";
     public ping() {
     }
 
@@ -114,8 +113,12 @@ public class ping extends Service {
             String inputLine;
 
             while((inputLine = in.readLine())!= null){
+                //napolni go report so povratnite podatoci
+                report = report + inputLine;
                 Log.i(TAG, inputLine);
             }
+
+            report = report + "; " + "`"; // znakot ( ` ) go koristam za pokasno da mozam da izdvojuvam posebi poraki
 
             return (exitValue == 0);
         }catch (Exception e) {
@@ -150,6 +153,12 @@ public class ping extends Service {
                         {
                             makePing();
                         }
+                        try {
+                            sendReport();
+                        }catch (Exception e)
+                        {
+                            Log.d(TAG, e.getMessage());
+                        }
                 }catch (Exception e)
                 {
                     Log.d(TAG, e.getMessage());
@@ -163,5 +172,11 @@ public class ping extends Service {
             timer.cancel();
             timer = null;
         }
+    }
+    private void sendReport()
+    {
+        Intent reportIntent = new Intent(this, reportPing.class);
+        reportIntent.putExtra("report", report);
+        startService(reportIntent);
     }
 }
