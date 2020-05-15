@@ -6,52 +6,48 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Environment;
 import android.os.IBinder;
 import android.util.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
 
 import static android.content.ContentValues.TAG;
-
 public class reportPing extends Service {
-
+    public String mHost = "http://10.0.2.2:5000/postresults";
+    public static final String report_1 = "report_1";
+    public static final String report_2 = "report_2";
+    public static final String report_3 = "report_3";
+    public static final String RESULT = "RESULT";
+    URL url;
     String reportString;
     boolean isConnected;
-    URL url;
-    HttpURLConnection con;
-    int counter = 0;
-    boolean storedReports = false;
-
     public reportPing() {
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
-
     @Override
     public void onCreate() {
         super.onCreate();
     }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         reportString = intent.getStringExtra("report");
 
         Log.d(TAG, "received report string is :" + reportString);
-
-        //dokolku e povrzano prati inaku zacuvaj initializing
         if (reportString.length() < 10)
         {
             Log.d(TAG, "invalid report string, will skip this cycle!");
@@ -60,146 +56,166 @@ public class reportPing extends Service {
         if(checkConnection())
         {
             Log.d(TAG, "initializing send function!");
-            sendReport();
-        }
-        else
-        {
-            Log.d(TAG, "No connection, will write to save for later!");
-            writeToMem();
+            //sendReport();
+            threadInBackground mThread = new threadInBackground( this, reportString);
+            new Thread(mThread).start();
         }
         return START_NOT_STICKY;
     }
-    public void sendReport()
-    {
-        try
-        {
-            url = new URL ("http://10.0.2.2:5000/postresults ");
-            Log.d(TAG, "url is :" + url.toString());
-        }catch (IOException e)
-        {
-            if(e.getMessage() != null)
-            {
-                Log.d(TAG, e.getMessage());
-            }
-        }
-        try {
-            con = (HttpURLConnection)url.openConnection();
-            con.setRequestMethod("POST");
-            con.setRequestProperty("Content-Type", "application/json; utf-8");
-            con.setRequestProperty("Accept", "application/json");
-            con.setDoOutput(true);
-            if(storedReports)
-            {
-                SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", 0); // 0 - for private mode
-                SharedPreferences.Editor editor = pref.edit();
 
-                String pom = pref.getString("storedReportString", null);
-
-                reportString = reportString + pom;
-
-                editor.clear();
-                editor.apply();
-
-                storedReports = false;
-            }
-            String jsonInputString = reportString;
-
-
-            //TODO: fix fatal exception!
-            OutputStream os = con.getOutputStream();
-
-            try{
-                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
-                os.write(input, 0, input.length);
-                Log.d(TAG, "sent report");
-            }catch (IOException e)
-            {
-                if(e.getMessage() != null){
-                    Log.d(TAG, e.getMessage());
-                }
-            }
-            BufferedReader br = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
-            try{
-                StringBuilder response = new StringBuilder();
-                String responseLine = null;
-                while ((responseLine = br.readLine()) != null) {
-                    response.append(responseLine.trim());
-                }
-                Log.d(TAG, "response is: " + response.toString());
-                System.out.println(response.toString());
-            }catch (IOException e)
-            {
-                if(e.getMessage() != null){
-                    Log.d(TAG, e.getMessage());
-                }
-            }
-
-        }catch (IOException e)
-        {
-            if(e.getMessage() != null){
-                Log.d(TAG, e.getMessage());
-            }
-        }
-    }
-    public void writeToMem()
-    {
-        boolean flag = false;
-        char c = '`';
-        LinkedList<String> mList = new LinkedList<String>();
-        String pom2 = "";
-        Environment.getDataDirectory();
-
-        SharedPreferences pref = getApplicationContext().getSharedPreferences("MyPref", 0);
-        SharedPreferences.Editor editor = pref.edit();
-
-        String forStoring = pref.getString("storedReportString", null);
-
-        if(counter > 3)
-        {
-            try{
-                char []stored = forStoring.toCharArray();
-                for(int i = 0 ; i <= stored.length ; i++)
-                {
-                    pom2 = pom2 + stored[i];
-                    if(stored[i] == c)
-                    {
-                        mList.add(pom2);
-                        pom2 = "";
-                    }
-                }
-                mList.pop();//isfrli go najstariot report
-                forStoring = "";
-                while(mList.pop() != null)
-                {
-                    forStoring = forStoring + mList.pop();
-                }
-            }catch (Exception e)
-            {
-                if(e.getMessage() != null) {
-                    Log.d(TAG, e.getMessage());
-                }
-            }
-        }
-        forStoring = forStoring + reportString;
-
-        editor.putString("storedReportString", forStoring);
-        editor.apply();//apply namesto commit za da bide vo pozadina(background)
-        counter ++;
-        storedReports = true;
-        Log.d(TAG, "stored report string is: " + forStoring);
-    }
     public  boolean checkConnection()
     {
         ConnectivityManager cm =
                 (ConnectivityManager) this.getSystemService(Context.CONNECTIVITY_SERVICE);
-
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
 
         if (activeNetwork != null) {
             isConnected = activeNetwork.isConnectedOrConnecting();
         }
-
         return isConnected;
+    }
+
+    class threadInBackground implements Runnable
+    {
+        public Context context;
+        public String initialResult;
+
+        threadInBackground(Context ctx, String input)
+        {
+            this.initialResult = input;
+            this.context = ctx;
+        }
+
+        @Override
+        public void run()
+        {
+            SharedPreferences preferences = getApplicationContext().getSharedPreferences("MyPref", 0);
+            SharedPreferences.Editor editor = preferences.edit();
+
+            ConnectivityManager connManager = (ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);
+            NetworkInfo info = connManager.getNetworkInfo(ConnectivityManager.TYPE_MOBILE);
+            boolean connected = info.isConnected();
+            if(connected)
+            {
+                try
+                {
+                    url = new URL (mHost);
+                    Log.d(TAG, "url is :" + url.toString());
+                    HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+                    conn.setRequestMethod("POST");
+                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
+                    conn.setDoOutput(true);
+                    String res1 = preferences.getString(report_1, "");
+                    String res2 = preferences.getString(report_2, "");
+                    String res3 = preferences.getString(report_3, "");
+                    if(!res1.equals("") && !res2.equals("") && !res3.equals(""))
+                    {
+                        JSONObject jsonparam = new JSONObject();
+                        jsonparam.put(RESULT, res1 + ";" + res2 + ";" + res3);
+                        DataOutputStream printout = new DataOutputStream(conn.getOutputStream());
+                        printout.writeBytes(URLEncoder.encode(jsonparam.toString(), "UTF-8"));
+                        printout.flush();
+                        printout.close();
+                        editor.remove(report_1).apply();
+                        editor.remove(report_2).apply();
+                        editor.remove(report_3).apply();
+                        editor.putString(report_1, initialResult);
+                    }
+                    else if(!res1.equals("") && !res2.equals(""))
+                    {
+                        JSONObject jsonparam = new JSONObject();
+                        jsonparam.put(RESULT, res1 + ";" + res2 + ";" + initialResult);
+                        DataOutputStream printout = new DataOutputStream(conn.getOutputStream());
+                        printout.writeBytes(URLEncoder.encode(jsonparam.toString(), "UTF-8"));
+                        printout.flush();
+                        printout.close();
+                        editor.remove(report_1).apply();
+                        editor.remove(report_2).apply();
+                    }
+                    else if(!res1.equals(""))
+                    {
+                        JSONObject jsonparam = new JSONObject();
+                        jsonparam.put(RESULT, res1 + ";" + initialResult);
+                        DataOutputStream printout = new DataOutputStream(conn.getOutputStream());
+                        printout.writeBytes(URLEncoder.encode(jsonparam.toString(), "UTF-8"));
+                        printout.flush();
+                        printout.close();
+                        editor.remove(report_1).apply();
+                    }
+                    else
+                    {
+                        JSONObject jsonparam = new JSONObject();
+                        jsonparam.put(RESULT, initialResult);
+                        DataOutputStream printout = new DataOutputStream(conn.getOutputStream());
+                        printout.writeBytes(URLEncoder.encode(jsonparam.toString(), "UTF-8"));
+                        printout.flush();
+                        printout.close();
+                    }
+
+                    try
+                    {
+                        int i;
+                        i = conn.getResponseCode();
+                        Log.d("Result", "Response code from host is: " + i);
+                    }catch (Exception e)
+                    {
+                        Log.d("ResultERR", "Error: " + e.getMessage());
+                    }
+                    /*try
+                    {
+                        BufferedReader br = new BufferedReader(
+                                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
+                        StringBuilder response = new StringBuilder();
+                        String responseLine = null;
+                        while( (responseLine = br.readLine()) != null )
+                        {
+                            response.append(responseLine.trim());
+                        }
+                        Log.d("Result", "Result is: " + response.toString());
+                    }
+                    catch (Exception e)
+                    {
+                        Log.d("ResultERR", "Error: " + e.getMessage());
+                    }*/
+                }
+                catch (MalformedURLException e)
+                {
+                    Log.d("Malform", "Error: " + e.getMessage());
+                }
+                catch (IOException e)
+                {
+                    Log.d("IO", "Error: " + e.getMessage());
+                } catch (JSONException e) {
+                    Log.d("JSON", "Error: " + e.getMessage());
+                }
+            }
+            else
+            {
+                String res1 = preferences.getString(report_1, "");
+                String res2 = preferences.getString(report_2, "");
+                String res3 = preferences.getString(report_3, "");
+                if(res1.equals("") && res2.equals("") && res3.equals(""))
+                {
+                    editor.remove(report_1).apply();
+                    editor.remove(report_2).apply();
+                    editor.remove(report_3).apply();
+                    editor.putString(report_1, res2).apply();
+                    editor.putString(report_2, res3).apply();
+                    editor.putString(report_3, initialResult).apply();
+                }
+                else if(!res1.equals("") && !res2.equals(""))
+                {
+                    preferences.edit().putString(report_3, initialResult).apply();
+                }
+                else if(!res1.equals(""))
+                {
+                    preferences.edit().putString(report_2, initialResult).apply();
+                }
+                else
+                {
+                    preferences.edit().putString(report_1, initialResult).apply();
+                }
+            }
+        }
     }
 }

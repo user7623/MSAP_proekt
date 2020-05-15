@@ -27,7 +27,7 @@ public class ping extends Service {
     private int count;
     private int packetSize;
     private int jobPeriod;
-    private String report = "result: ";
+    private String report = "RESULT: ";
     //public boolean connection;
     public ping() {
     }
@@ -120,8 +120,8 @@ public class ping extends Service {
                 report = report + inputLine;
                 Log.i(TAG, inputLine);
             }
-
-            report = report + "; " + "`"; // znakot ( ` ) go koristam za pokasno da mozam da izdvojuvam posebi poraki
+            in.close();
+            report = report + "; ";
 
             return (exitValue == 0);
         }catch (Exception e) {
