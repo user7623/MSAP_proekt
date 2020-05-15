@@ -28,6 +28,7 @@ public class ping extends Service {
     private int packetSize;
     private int jobPeriod;
     private String report = "result: ";
+    //public boolean connection;
     public ping() {
     }
 
@@ -84,6 +85,7 @@ public class ping extends Service {
                     Log.i(TAG, "Connected to host");
                 } else {
                     Log.i(TAG, "unable to connect to host");
+                    sendReport();
                 }
             }
 
@@ -95,6 +97,7 @@ public class ping extends Service {
                     Log.i(TAG, "Connected to host");
                 } else {
                     Log.i(TAG, "unable to connect to host");
+                    sendReport();
                 }
             }
         } else {

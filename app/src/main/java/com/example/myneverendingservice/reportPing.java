@@ -11,10 +11,12 @@ import android.os.IBinder;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,6 +30,7 @@ public class reportPing extends Service {
     HttpURLConnection con;
     int counter = 0;
     boolean storedReports = false;
+
     public reportPing() {
     }
 
@@ -48,12 +51,18 @@ public class reportPing extends Service {
 
         Log.d(TAG, "received report string is :" + reportString);
 
-        //dokolku e povrzano prati inaku zacuvaj
+        //dokolku e povrzano prati inaku zacuvaj initializing
+        if (reportString.length() < 10)
+        {
+            Log.d(TAG, "invalid report string, will skip this cycle!");
+            return START_NOT_STICKY;
+        }
         if(checkConnection())
         {
+            Log.d(TAG, "initializing send function!");
             sendReport();
         }
-        if(!isConnected)
+        else
         {
             Log.d(TAG, "No connection, will write to save for later!");
             writeToMem();
@@ -65,9 +74,13 @@ public class reportPing extends Service {
         try
         {
             url = new URL ("http://10.0.2.2:5000/postresults ");
-        }catch (Exception e)
+            Log.d(TAG, "url is :" + url.toString());
+        }catch (IOException e)
         {
-            Log.d(TAG, e.getMessage());
+            if(e.getMessage() != null)
+            {
+                Log.d(TAG, e.getMessage());
+            }
         }
         try {
             con = (HttpURLConnection)url.openConnection();
@@ -91,23 +104,38 @@ public class reportPing extends Service {
             }
             String jsonInputString = reportString;
 
-            try(OutputStream os = con.getOutputStream()) {
-                byte[] input = jsonInputString.getBytes("utf-8");
-                os.write(input, 0, input.length);
-            }
 
-            try(BufferedReader br = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), "utf-8"))) {
+            //TODO: fix fatal exception!
+            OutputStream os = con.getOutputStream();
+
+            try{
+                byte[] input = jsonInputString.getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+                Log.d(TAG, "sent report");
+            }catch (IOException e)
+            {
+                if(e.getMessage() != null){
+                    Log.d(TAG, e.getMessage());
+                }
+            }
+            BufferedReader br = new BufferedReader(
+                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8));
+            try{
                 StringBuilder response = new StringBuilder();
                 String responseLine = null;
                 while ((responseLine = br.readLine()) != null) {
                     response.append(responseLine.trim());
                 }
-                Log.d(TAG, response.toString());
+                Log.d(TAG, "response is: " + response.toString());
                 System.out.println(response.toString());
+            }catch (IOException e)
+            {
+                if(e.getMessage() != null){
+                    Log.d(TAG, e.getMessage());
+                }
             }
 
-        }catch (Exception e)
+        }catch (IOException e)
         {
             if(e.getMessage() != null){
                 Log.d(TAG, e.getMessage());
@@ -171,6 +199,7 @@ public class reportPing extends Service {
         if (activeNetwork != null) {
             isConnected = activeNetwork.isConnectedOrConnecting();
         }
+
         return isConnected;
     }
 }
