@@ -145,32 +145,7 @@ public class reportPing extends Service {
                         printout.flush();
                         printout.close();
                     }
-/*
-                    try
-                    {
-                        int i;
-                        i = conn.getResponseCode();
-                        Log.d("Result", "Response code from host is: " + i);
-                    }catch (Exception e)
-                    {
-                        Log.d("ResultERR", "Error: " + e.getMessage());
-                    }*/
-                    /*try
-                    {
-                        BufferedReader br = new BufferedReader(
-                                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8));
-                        StringBuilder response = new StringBuilder();
-                        String responseLine = null;
-                        while( (responseLine = br.readLine()) != null )
-                        {
-                            response.append(responseLine.trim());
-                        }
-                        Log.d("Result", "Result is: " + response.toString());
-                    }
-                    catch (Exception e)
-                    {
-                        Log.d("ResultERR", "Error: " + e.getMessage());
-                    }*/
+
                 }
                 catch (MalformedURLException e)
                 {
