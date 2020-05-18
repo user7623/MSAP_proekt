@@ -1,5 +1,4 @@
 package com.example.myneverendingservice;
-
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -8,21 +7,16 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.IBinder;
 import android.util.Log;
-
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-
 import static android.content.ContentValues.TAG;
+
 public class reportPing extends Service {
     public String mHost = "http://10.0.2.2:5000/postresults";
     public static final String report_1 = "report_1";
@@ -151,7 +145,7 @@ public class reportPing extends Service {
                         printout.flush();
                         printout.close();
                     }
-
+/*
                     try
                     {
                         int i;
@@ -160,7 +154,7 @@ public class reportPing extends Service {
                     }catch (Exception e)
                     {
                         Log.d("ResultERR", "Error: " + e.getMessage());
-                    }
+                    }*/
                     /*try
                     {
                         BufferedReader br = new BufferedReader(

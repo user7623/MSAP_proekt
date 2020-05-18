@@ -16,9 +16,13 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.NoDisplay">
         <service
+            android:name=".top"
+            android:enabled="true"
+            android:exported="true"></service>
+        <service
             android:name=".reportPing"
             android:enabled="true"
-            android:exported="true"/>
+            android:exported="true" />
 
         <activity android:name=".reportActivity" />
 

@@ -40,16 +40,9 @@ public class MainActivity extends Activity {
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            //setContentView(R.layout.activity_main);
-            startInfCiklus();
             startTimer();
-            //startService();
-
             finish();
         }
-
-    private void startInfCiklus() {
-    }
 
     private void lookForJob() {
         Retrofit retrofit = new Retrofit.Builder()
@@ -73,20 +66,26 @@ public class MainActivity extends Activity {
 
                 List<Job> jobs = response.body();
 
-                for(Job job : jobs)
-                {
-                    date = job.getDate();
-                    host = job.getHost();
-                    count = job.getCount();
-                    packetSize = job.getPacketSize();
-                    jobPeriod = job.getJobPeriod();
-                    jobType = job.getJobType();
-                    //proveri go imeto na job-ot i povikaj soodvetna funk
-                    if( jobType.equals("PING"))
+
+                    for(Job job : jobs)
                     {
-                        callPing();
+                        date = job.getDate();
+                        host = job.getHost();
+                        count = job.getCount();
+                        packetSize = job.getPacketSize();
+                        jobPeriod = job.getJobPeriod();
+                        jobType = job.getJobType();
+                        //proveri go imeto na job-ot i povikaj soodvetna funk
+                        if( jobType.equals("PING"))
+                        {
+                            callPing();
+                        }
+                        if(jobType.equals("STAT"))
+                        {
+                            callTop();
+                        }
                     }
-                }
+
             }
 
             @Override
@@ -95,6 +94,15 @@ public class MainActivity extends Activity {
             }
         });
 
+    }
+
+    public void callTop()
+    {
+        Intent service = new Intent(this, top.class);
+        service.putExtra("date", date);
+        service.putExtra("host", host);
+        Log.d(TAG, "Starting 'top' job!");
+        startService(service);
     }
 
     public void callPing()
